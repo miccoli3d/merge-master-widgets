@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Merge Master card picture</title>
+<!--
+A card's picture that rises a little and grows a little under the cursor, with a soft shadow under it: for the three
+modes' cards on the Superhive page (Mattia, 5 November 2026), shown there in an iframe, as Superhive keeps no hover
+effects of its own. A click on it goes to that mode's section, as the card's "Learn more" does.
+  rise.html?src=<image>&alt=<words>&go=<section's anchor>&page=<the product page's address>&hot=<image>
+hot: the same view with the zone of the join lit orange; under the cursor it fades in over the picture (Mattia,
+5 November 2026). Both pictures sit in one cell, so they always cover each other exactly.
+The picture sits in the frame with room on every side: above for the rise, at the sides for the growth, below for the
+shadow, so nothing is ever cut; the page widens the frame by as much, so the picture still lines up with its card.
+See-through, as lift.html: "light dark" makes the frame take the setting of the page it sits in, so a browser never
+paints it white.
+-->
+<meta name="color-scheme" content="light dark">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+  .box { position: absolute; left: 8px; right: 8px; bottom: 18px; top: 22px; outline: none; }
+  .box.go { cursor: pointer; }
+  .pic { position: absolute; inset: 0; display: grid; grid-template: 100% / 100%; place-items: end center;
+         transform-origin: 50% 100%; filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0));
+         transition: transform .5s cubic-bezier(.2, .7, .2, 1), filter .5s ease; will-change: transform, filter; }
+  .pic img { grid-area: 1 / 1; display: block; max-width: 100%; max-height: 100%; border-radius: 4px;
+             user-select: none; -webkit-user-drag: none; }
+  .pic .hot { opacity: 0; transition: opacity .45s ease; }
+  .pic .hot[hidden] { display: none; }
+  .box:hover .pic, .box:focus-visible .pic { transform: translateY(-8px) scale(1.04);
+        filter: drop-shadow(0 10px 8px rgba(0, 0, 0, .45)); }
+  .box:hover .hot, .box:focus-visible .hot { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) {
+    .pic { transition: filter .3s ease; }
+    .box:hover .pic, .box:focus-visible .pic { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="box" id="box"><div class="pic"><img id="pic" alt=""><img id="hot" class="hot" alt="" hidden></div></div>
+<script>
+  const q = new URLSearchParams(window.MM_PARAMS || location.search);
+  const box = document.getElementById("box"), pic = document.getElementById("pic"), hot = document.getElementById("hot");
+  pic.src = q.get("src") || ""; pic.alt = q.get("alt") || "";
+  if (q.get("hot")) { hot.src = q.get("hot"); hot.hidden = false; hot.setAttribute("aria-hidden", "true") }
+  const go = q.get("go"), page = q.get("page");
+  function jump() {
+    // the same page around it (the preview): scroll it to the section that shows
+    try {
+      const marks = [...parent.document.querySelectorAll('a[name="' + go + '"]')];
+      const mark = marks.find(a => a.closest("[hidden]") === null) || marks[0];
+      if (mark) { mark.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" }); return }
+    } catch (e) { /* Superhive's page, another site: go there by its address instead */ }
+    if (page) window.open(page + "#" + go, "_top");
+  }
+  if (go) {
+    box.classList.add("go");
+    box.tabIndex = 0;
+    box.setAttribute("role", "link");
+    box.setAttribute("aria-label", (q.get("alt") || "Picture") + ": go to the section");
+    box.addEventListener("click", jump);
+    box.addEventListener("keydown", e => { if (e.key === "Enter") jump() });
+  }
+</script>
+</body>
+</html>

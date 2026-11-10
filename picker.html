@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Merge Master options</title>
+<!--
+Click an option, see its picture and one line about it: for the Superhive pages, shown there in an iframe. The
+options sit under the picture, the chosen one marked on its top edge, next to the picture (Mattia, 5 November 2026).
+Everything
+comes from the address, one o / src / c per option (c, the line under the picture, may be empty):
+  picker.html?o=Smooth&src=<image>&c=<line>&o=Fillet&src=<image>&c=<line>
+A click on the picture, or the button at its top right, shows it on the whole screen (Mattia, 4 November 2026).
+Superhive keeps allowfullscreen on an iframe; where full screen is not allowed, neither is offered (no new tab: Mattia).
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #181A28; overflow: hidden; color: #F2F2F5;
+               font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  .box { position: absolute; inset: 0; display: flex; flex-direction: column; border: 1px solid rgba(255, 255, 255, .08);
+         border-radius: 4px; overflow: hidden; box-sizing: border-box; }
+  /* whole screen */
+  .big[hidden] { display: none; }
+  .big { position: absolute; top: 10px; right: 10px; z-index: 3; width: 32px; height: 32px; padding: 0; border: 0;
+         border-radius: 4px; background: rgba(16, 17, 28, .72); color: #F2F2F5; cursor: pointer; display: grid;
+         place-items: center; opacity: .8; box-shadow: none; transition: opacity .2s, background-color .2s, transform .2s; }
+  .big:hover { opacity: 1; background: rgba(16, 17, 28, .92); transform: scale(1.08); }
+  .big svg { width: 16px; height: 16px; }
+  .big .out, .full .big .in { display: none; }  .full .big .out { display: block; }
+  .full .box { border: 0; border-radius: 0; }
+  .full .view img { object-fit: contain; }
+  .bar { display: flex; border-top: 1px solid rgba(255, 255, 255, .08); }
+  .bar button { flex: 1; font: 500 14px Inter, 'Segoe UI', Roboto, sans-serif; color: #A3A6B5; background: none; border: 0;
+           box-shadow: inset 0 2px 0 transparent; padding: 11px 6px; cursor: pointer;
+           transition: color .15s, background-color .15s, box-shadow .15s; }
+  .bar button:hover { color: #F2F2F5; background: rgba(255, 255, 255, .03); }
+  .bar button[aria-pressed="true"] { color: #F2F2F5; background: #222536; box-shadow: inset 0 2px 0 #FF6A00; }
+  button:focus-visible { outline: 2px solid #FF6A00; outline-offset: -2px; }
+  .view { position: relative; flex: 1; min-height: 0; background: #10111C; }
+  .view.zoom { cursor: zoom-in; }  .full .view.zoom { cursor: zoom-out; }
+  .view img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .25s; }
+  @media (prefers-reduced-motion: reduce) { .view img, button { transition: none; } }
+  .cap { margin: 0; padding: 11px 16px; font-size: 14px; line-height: 1.45; color: #A3A6B5;
+         border-top: 1px solid rgba(255, 255, 255, .08); }
+  .cap b { color: #F2F2F5; font-weight: 600; }
+  .cap:empty { display: none; }
+</style>
+</head>
+<body>
+<div class="box" id="box">
+  <div class="view" id="view"><img id="old" alt="" aria-hidden="true"><img id="pic" alt="">
+    <button class="big" id="big" type="button" aria-label="Show on the whole screen" title="Whole screen">
+      <svg class="in" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+           stroke-linejoin="round"><path d="M10 2.5h3.5V6M6 13.5H2.5V10M13.5 2.5l-4 4M2.5 13.5l4-4"/></svg>
+      <svg class="out" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+           stroke-linejoin="round"><path d="M9.5 2.5V6.5H13.5M6.5 13.5V9.5H2.5M9.5 6.5l4-4M6.5 9.5l-4 4"/></svg>
+    </button>
+  </div>
+  <div class="bar" id="bar" role="group" aria-label="Options"></div>
+  <p class="cap" id="cap"></p>
+</div>
+<script>
+  const q = new URLSearchParams(window.MM_PARAMS || location.search);
+  const names = q.getAll("o"), pics = q.getAll("src"), caps = q.getAll("c");
+  const bar = document.getElementById("bar"), pic = document.getElementById("pic"), cap = document.getElementById("cap");
+  const old = document.getElementById("old");          // the picture before, under the new one while it fades in
+  const buttons = names.map((name, i) => {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = name;
+    btn.addEventListener("click", () => pick(i));
+    bar.append(btn);
+    new Image().src = pics[i] || "";                    // ready before the click
+    return btn;
+  });
+  function pick(i) {
+    if (pic.src) { old.src = pic.src; pic.style.opacity = 0 }
+    pic.onload = () => { pic.style.opacity = 1 };
+    pic.src = pics[i] || ""; pic.alt = names[i] || "";
+    cap.innerHTML = "";
+    if (caps[i]) { const b = document.createElement("b"); b.textContent = names[i] + ". "; cap.append(b, caps[i]) }
+    buttons.forEach((b, j) => b.setAttribute("aria-pressed", i === j));
+  }
+  if (buttons.length) pick(Math.min(+(q.get("i") || 0), buttons.length - 1));
+  // Whole screen from a click on the picture or the button, and back the same way or with Esc.
+  const root = document.documentElement, big = document.getElementById("big");
+  const view = document.getElementById("view");
+  if (document.fullscreenEnabled) {
+    view.classList.add("zoom");
+    view.addEventListener("click", () => {
+      if (document.fullscreenElement) document.exitFullscreen(); else root.requestFullscreen().catch(() => {});
+    });
+  } else big.hidden = true;
+  document.addEventListener("fullscreenchange", () => {
+    root.classList.toggle("full", !!document.fullscreenElement);
+    big.setAttribute("aria-label", document.fullscreenElement ? "Back to the page" : "Show on the whole screen");
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Merge Master picture</title>
+<!--
+A picture that grows a little and turns a little under the cursor, leaning towards it: for the opening of the Superhive
+page (Mattia, 4 November 2026), shown there in an iframe, as Superhive keeps no hover effects of its own.
+  lift.html?src=<image>
+Each shape glows in its own colour, as on the 2.0 cover: blurred copies of the picture behind it, a close one and a
+wide one, soft at rest and brighter under the cursor. Deep, saturated colours, not lightened (Mattia: "too light, look
+at the cover's halo"): brightening a blur turns the orange yellow and the blue pale, so the copies are saturated
+instead, and the white wireframe in them is drowned in colour.
+The light that follows the cursor stays within the cylinders' own shape (Mattia: "the limit in the shape of the
+cylinders, not a square"): a second, brighter blurred copy of the picture, shown only around the cursor, so the glow of
+whichever part of the shapes the cursor is near lights up, in that part's own colour, and glides after it; half as
+strong as the first try (Mattia).
+Both glows sit in a layer as large as the frame, which fades them out before its edges: a glow is never cut straight,
+by the frame or by the picture's own box (a mask stops at the box of what it masks, so the light's mask is as large
+as the frame too).
+See-through, so the page's orange and blue light runs on behind the picture. A browser paints a see-through frame white
+when its light / dark setting differs from the page around it (Mattia saw it, 4 November 2026): "light dark" makes
+the frame take the setting of the page it sits in, whatever Superhive's is, so the two never differ (checked in
+Chrome, on a light page and on a dark one).
+-->
+<meta name="color-scheme" content="light dark">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+  .box { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; perspective: 900px; }
+  /* 80 %: room on every side for the growth, the turn, the tilt and the glow, so nothing is cut at the frame's edge */
+  .obj { position: relative; flex: none; width: 80%; height: 80%;
+         transition: transform .6s cubic-bezier(.2, .7, .2, 1), filter .6s ease; will-change: transform; }
+  .obj img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none;
+             -webkit-user-drag: none; }
+  /* the glows' layer: as large as the frame (the picture is 80 % of it), fading out before its edges */
+  .glow { position: absolute; inset: -12.5%; pointer-events: none;
+          -webkit-mask-image: linear-gradient(to right, transparent 0%, transparent 4%, rgba(0,0,0,.5) 9%, #000 15%,
+                                              #000 85%, rgba(0,0,0,.5) 91%, transparent 96%, transparent 100%),
+                              linear-gradient(to bottom, transparent 0%, transparent 4%, rgba(0,0,0,.5) 9%, #000 15%,
+                                              #000 85%, rgba(0,0,0,.5) 91%, transparent 96%, transparent 100%);
+          -webkit-mask-composite: source-in;
+                  mask-image: linear-gradient(to right, transparent 0%, transparent 4%, rgba(0,0,0,.5) 9%, #000 15%,
+                                              #000 85%, rgba(0,0,0,.5) 91%, transparent 96%, transparent 100%),
+                              linear-gradient(to bottom, transparent 0%, transparent 4%, rgba(0,0,0,.5) 9%, #000 15%,
+                                              #000 85%, rgba(0,0,0,.5) 91%, transparent 96%, transparent 100%);
+                  mask-composite: intersect; }
+  .glow img { inset: 10%; width: 80%; height: 80%; }
+  .bloom { filter: blur(18px) saturate(2.6) contrast(1.15); opacity: .5; transition: opacity .6s ease; }
+  .rim { filter: blur(6px) saturate(2.4) contrast(1.1); opacity: .35; transition: opacity .6s ease; }
+  .obj.on { filter: brightness(1.05); }
+  .obj.on .bloom { opacity: 1; }
+  .obj.on .rim { opacity: .75; }
+  /* the cursor's light: the shapes' own glow, brighter, only near the cursor */
+  .spot { position: absolute; inset: 0; opacity: 0; transition: opacity .7s ease;
+          -webkit-mask-image: radial-gradient(circle 170px at var(--mx, 50%) var(--my, 50%), #000 0%, rgba(0,0,0,.85) 18%,
+                              rgba(0,0,0,.55) 38%, rgba(0,0,0,.25) 60%, rgba(0,0,0,.07) 80%, transparent 100%);
+                  mask-image: radial-gradient(circle 170px at var(--mx, 50%) var(--my, 50%), #000 0%, rgba(0,0,0,.85) 18%,
+                              rgba(0,0,0,.55) 38%, rgba(0,0,0,.25) 60%, rgba(0,0,0,.07) 80%, transparent 100%); }
+  .spot img { filter: blur(14px) saturate(2.6) contrast(1.15) brightness(1.1); transform: scale(1.04); }
+  .obj.on .spot { opacity: .5; }
+  @media (prefers-reduced-motion: reduce) { .obj { transition: filter .3s ease; } }
+</style>
+</head>
+<body>
+<div class="box" id="box">
+  <div class="obj" id="obj">
+    <div class="glow"><img class="bloom" id="bloom" alt="" aria-hidden="true"><img class="rim" id="rim" alt="" aria-hidden="true">
+      <div class="spot" id="spot"><img id="spotpic" alt="" aria-hidden="true"></div></div>
+    <img id="pic" alt="">
+  </div>
+</div>
+<script>
+  const q = new URLSearchParams(window.MM_PARAMS || location.search);
+  const box = document.getElementById("box"), obj = document.getElementById("obj"), spot = document.getElementById("spot");
+  const pic = document.getElementById("pic");
+  pic.src = document.getElementById("spotpic").src = document.getElementById("bloom").src =
+    document.getElementById("rim").src = q.get("src") || "";
+  pic.alt = q.get("alt") || "";
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // The light glides after the cursor (a tenth of the way each frame), in the picture's own place.
+  let hx = 0, hy = 0, tx = 0, ty = 0, run = 0;
+  const put = () => { spot.style.setProperty("--mx", hx + "px"); spot.style.setProperty("--my", hy + "px") };
+  function glide() {
+    hx += (tx - hx) * .12; hy += (ty - hy) * .12; put();
+    run = Math.abs(tx - hx) + Math.abs(ty - hy) > .3 ? requestAnimationFrame(glide) : 0;
+  }
+  function aim(e, jump) {
+    const r = box.getBoundingClientRect(), g = spot.parentElement;  // the light's layer, where it sits before it turns
+    tx = e.clientX - r.left - obj.offsetLeft - g.offsetLeft; ty = e.clientY - r.top - obj.offsetTop - g.offsetTop;
+    if (jump || still) { hx = tx; hy = ty; put() } else if (!run) run = requestAnimationFrame(glide);
+  }
+  // Under the cursor: 6 % bigger, turned 4 degrees, and tilted up to 7 degrees towards where the cursor is.
+  box.addEventListener("pointerenter", e => { obj.classList.add("on"); aim(e, true) });
+  box.addEventListener("pointermove", e => {
+    aim(e, false);
+    if (still) return;
+    const r = box.getBoundingClientRect();
+    const dx = (e.clientX - r.left) / r.width - .5, dy = (e.clientY - r.top) / r.height - .5;
+    obj.style.transform = `scale(1.06) rotate(-4deg) rotateY(${dx * 14}deg) rotateX(${-dy * 14}deg)`;
+  });
+  box.addEventListener("pointerleave", () => { obj.style.transform = ""; obj.classList.remove("on") });
+</script>
+</body>
+</html>

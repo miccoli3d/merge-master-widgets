@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Merge Master compare</title>
+<!--
+Corners nearly square, as on the page (Mattia, 5 November 2026: "more luxury, less AI").
+Before / after slider for the Superhive pages, shown there in an iframe (Superhive keeps no scripts of its own).
+Everything comes from the address, so this file never changes when the pictures do:
+  compare.html?a=<before image>&b=<after image>&la=<label>&lb=<label>&x=50
+hl=b: the after side is Merge Master's, its label orange and the other grey.
+bare=1: no frame, for pictures already on the page's night blue (Mattia, 5 November 2026).
+The button at the top right shows the slider on the whole screen (Mattia, 4 November 2026). Superhive keeps
+allowfullscreen on an iframe; where full screen is not allowed the button is not shown (no new tab: Mattia).
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #181A28; overflow: hidden;
+               font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  .frame { position: absolute; inset: 0; overflow: hidden; border: 1px solid rgba(255, 255, 255, .08);
+           border-radius: 4px; box-sizing: border-box; background: #10111C; touch-action: pan-y; }
+  .frame img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; user-select: none;
+               -webkit-user-drag: none; pointer-events: none; }
+  .after { clip-path: inset(0 0 0 var(--x, 50%)); }
+  .line { position: absolute; top: 0; bottom: 0; left: var(--x, 50%); width: 2px; margin-left: -1px;
+          background: #FFFFFF; pointer-events: none; }
+  .knob { position: absolute; top: 50%; left: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; border-radius: 50%;
+          background: #FFFFFF; box-shadow: 0 0 0 0 #FF6A00, 0 1px 6px rgba(0, 0, 0, .4);
+          transition: transform .15s, box-shadow .15s; }
+  /* under the cursor an orange ring, as on the wheel's tiles (Mattia, 6 November 2026) */
+  .frame:hover .knob, input:active ~ .line .knob { transform: scale(1.12);
+          box-shadow: 0 0 0 3px #FF6A00, 0 1px 6px rgba(0, 0, 0, .4); }
+  @media (prefers-reduced-motion: reduce) { .knob { transition: none; } }
+  .knob::before, .knob::after { content: ""; position: absolute; top: 50%; width: 6px; height: 6px; margin-top: -4px;
+          border: solid #10111C; border-width: 0 0 2px 2px; }
+  .knob::before { left: 8px; transform: rotate(45deg); }
+  .knob::after { right: 8px; transform: rotate(-135deg); }
+  .tag { position: absolute; bottom: 10px; font-size: 13px; font-weight: 500; color: #F2F2F5;
+         background: rgba(16, 17, 28, .75); border-radius: 3px; padding: 3px 9px; pointer-events: none; }
+  .tag.a { left: 10px; }  .tag.b { right: 10px; }
+  .tag.dim { color: #A3A6B5; }  .tag.lit { color: #FF6A00; }
+  input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
+  input:focus-visible ~ .line .knob { outline: 2px solid #FF6A00; outline-offset: 3px; }
+  /* whole screen */
+  .big[hidden] { display: none; }
+  .big { position: absolute; top: 10px; right: 10px; z-index: 3; width: 32px; height: 32px; padding: 0; border: 0;
+         border-radius: 4px; background: rgba(16, 17, 28, .72); color: #F2F2F5; cursor: pointer; display: grid;
+         place-items: center; opacity: .8; transition: opacity .2s, background-color .2s, transform .2s; }
+  .big:hover { opacity: 1; background: rgba(16, 17, 28, .92); transform: scale(1.08); }
+  .big:focus-visible { outline: 2px solid #FF6A00; outline-offset: 2px; }
+  .big svg { width: 16px; height: 16px; }
+  .big .out, .full .big .in { display: none; }  .full .big .out { display: block; }
+  .full .frame, .bare .frame { border: 0; border-radius: 0; }
+  .bare body, html.bare { background: #10111C; }
+  .full .frame img { object-fit: contain; }
+</style>
+</head>
+<body>
+<div class="frame" id="frame">
+  <img id="a" alt="">
+  <img id="b" class="after" alt="">
+  <span class="tag a" id="la"></span>
+  <span class="tag b" id="lb"></span>
+  <input type="range" id="x" min="0" max="100" step="0.1" value="50" aria-label="Move to compare">
+  <div class="line"><div class="knob"></div></div>
+  <button class="big" id="big" type="button" aria-label="Show on the whole screen" title="Whole screen">
+    <svg class="in" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+         stroke-linejoin="round"><path d="M10 2.5h3.5V6M6 13.5H2.5V10M13.5 2.5l-4 4M2.5 13.5l4-4"/></svg>
+    <svg class="out" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+         stroke-linejoin="round"><path d="M9.5 2.5V6.5H13.5M6.5 13.5V9.5H2.5M9.5 6.5l4-4M6.5 9.5l-4 4"/></svg>
+  </button>
+</div>
+<script>
+  const q = new URLSearchParams(window.MM_PARAMS || location.search);
+  const frame = document.getElementById("frame"), a = document.getElementById("a"), b = document.getElementById("b");
+  const x = document.getElementById("x");
+  a.src = q.get("a") || ""; b.src = q.get("b") || "";
+  a.alt = q.get("la") || "Before"; b.alt = q.get("lb") || "After";
+  document.getElementById("la").textContent = q.get("la") || "Before";
+  document.getElementById("lb").textContent = q.get("lb") || "After";
+  if (q.get("bare") === "1") document.documentElement.classList.add("bare");
+  if (q.get("hl") === "b") {                            // the after side is ours: grey label, orange label
+    document.getElementById("la").classList.add("dim"); document.getElementById("lb").classList.add("lit");
+  }
+  const set = v => frame.style.setProperty("--x", v + "%");
+  x.value = q.get("x") || 50; set(x.value);
+  let touched = false, back = 0;
+  x.addEventListener("input", () => { touched = true; cancelAnimationFrame(back); set(x.value) });
+  // Let go with the mouse or a finger and the line glides back to the middle (Mattia, 4 November 2026); the
+  // keyboard keeps where it was put.
+  const centre = +(q.get("x") || 50);
+  function release() {
+    const from = +x.value, start = performance.now();
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) { x.value = centre; set(centre); return }
+    (function step(now) {
+      const t = Math.min((now - start) / 420, 1), v = from + (centre - from) * (1 - Math.pow(1 - t, 3));
+      x.value = v; set(v);
+      if (t < 1) back = requestAnimationFrame(step);
+    })(start);
+  }
+  x.addEventListener("pointerup", release);
+  x.addEventListener("pointercancel", release);
+  // Once, when the slider first comes into view, the line swings a little each way: it says "drag me".
+  function hint() {
+    if (touched || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const start = performance.now(), base = +x.value;
+    (function step(now) {
+      const t = Math.min((now - start) / 1400, 1);
+      if (touched) return;
+      const v = base + Math.sin(t * Math.PI * 2) * 9 * (1 - t);
+      x.value = v; set(v);
+      if (t < 1) requestAnimationFrame(step);
+    })(start);
+  }
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver(e => { if (e[0].isIntersecting) { io.disconnect(); setTimeout(hint, 400) } });
+    io.observe(frame);
+  } else setTimeout(hint, 600);
+  // Whole screen, and back with the same button or Esc.
+  const big = document.getElementById("big"), root = document.documentElement;
+  big.hidden = !document.fullscreenEnabled;
+  big.addEventListener("click", () => {
+    if (document.fullscreenElement) document.exitFullscreen(); else root.requestFullscreen().catch(() => {});
+  });
+  document.addEventListener("fullscreenchange", () => {
+    root.classList.toggle("full", !!document.fullscreenElement);
+    big.setAttribute("aria-label", document.fullscreenElement ? "Back to the page" : "Show on the whole screen");
+  });
+</script>
+</body>
+</html>

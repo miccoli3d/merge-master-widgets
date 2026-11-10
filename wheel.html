@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Merge Master wheel</title>
+<!--
+The wheel of Merge Master Pro, drawn as the add-on draws it (_draw_wheel): under the cursor a tile takes the orange
+edge, its picture turns orange and its name white (Mattia, 6 November 2026). On the page it also grows a little, which
+the wheel in Blender doesn't do. For the Superhive page, in an iframe, as Superhive keeps no hover effects of its own.
+  wheel.html?merge=<image>&mergeh=<image>&bevel=<image>&bevelh=<image>&carve=<image>&carveh=<image>&bar=<words>&alt=<words>
+merge, bevel, carve: the add-on's grey pictures (icons/mode_*_off.png); mergeh, bevelh, carveh: the orange ones (_on).
+bar: the words in the bar under the three; on a page no object is in sight, so the add-on's words for no target.
+Every size is in --u, one unit of the add-on's _wheel_boxes, worked out from the frame, so the wheel fits any frame.
+See-through, as lift.html: "light dark" makes the frame take the setting of the page it sits in, so a browser never
+paints it white.
+-->
+<meta name="color-scheme" content="light dark">
+<style>
+  :root { --u: min(calc(100vw / 336), calc(100vh / 222)); }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
+  /* the mouse's starting point, the middle of the wheel: 136 units above it, 66 below */
+  .wheel { position: absolute; left: 50%; top: calc(50% + 35 * var(--u)); width: 0; height: 0;
+           font-family: Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  .tile { position: absolute; width: calc(92 * var(--u)); height: calc(98 * var(--u));
+          border-radius: calc(9 * var(--u)); background: rgba(36, 36, 38, .89); color: #C7C7CC;
+          box-shadow: 0 0 0 0 #FF6A00, 0 calc(3 * var(--u)) calc(12 * var(--u)) rgba(0, 0, 0, .35);
+          transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease, color .18s ease; }
+  .merge { left: calc(-158 * var(--u)); top: calc(-49 * var(--u)); }
+  .carve { left: calc(66 * var(--u)); top: calc(-49 * var(--u)); }
+  .bevel { left: calc(-46 * var(--u)); top: calc(-136 * var(--u)); }
+  .target { left: calc(-55 * var(--u)); top: calc(38 * var(--u)); width: calc(110 * var(--u)); height: calc(28 * var(--u)); }
+  .tile img { position: absolute; left: calc(5 * var(--u)); bottom: calc(24 * var(--u)); width: calc(82 * var(--u));
+              height: calc(82 * var(--u)); display: block; user-select: none; -webkit-user-drag: none; pointer-events: none; }
+  .tile img.on { opacity: 0; transition: opacity .18s ease; }
+  .tile b { position: absolute; left: 0; right: 0; bottom: 0; height: calc(24 * var(--u)); text-align: center;
+            font-weight: 400; font-size: calc(12 * var(--u)); line-height: calc(24 * var(--u)); }
+  .target b { height: 100%; line-height: calc(28 * var(--u)); }
+  .tile:hover { transform: scale(1.06); z-index: 1; background: #2A2A2E; color: #FFF;
+                box-shadow: 0 0 0 calc(2 * var(--u)) #FF6A00, 0 calc(3 * var(--u)) calc(12 * var(--u)) rgba(0, 0, 0, .35); }
+  .tile:hover img.on { opacity: 1; }
+  .ring { position: absolute; left: calc(-6.5 * var(--u)); top: calc(-6.5 * var(--u)); width: calc(8 * var(--u));
+          height: calc(8 * var(--u)); border: calc(2.5 * var(--u)) solid rgba(255, 255, 255, .3); border-radius: 50%; }
+  @media (prefers-reduced-motion: reduce) {
+    .tile, .tile img.on { transition: none; }
+    .tile:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wheel" id="wheel" role="img">
+  <div class="tile merge"><img class="off" data-p="merge" alt=""><img class="on" data-p="mergeh" alt=""><b>Merge</b></div>
+  <div class="tile bevel"><img class="off" data-p="bevel" alt=""><img class="on" data-p="bevelh" alt=""><b>Bevel</b></div>
+  <div class="tile carve"><img class="off" data-p="carve" alt=""><img class="on" data-p="carveh" alt=""><b>Carve</b></div>
+  <div class="tile target"><b id="target"></b></div>
+  <div class="ring"></div>
+</div>
+<script>
+  const q = new URLSearchParams(window.MM_PARAMS || location.search);
+  document.querySelectorAll("img").forEach(i => { i.src = q.get(i.dataset.p) || "" });
+  document.getElementById("target").textContent = q.get("bar") || "Pick a target";
+  document.getElementById("wheel").setAttribute("aria-label", q.get("alt") || "");
+  document.addEventListener("touchstart", () => {}, { passive: true });   // a finger on a phone lights a tile too
+</script>
+</body>
+</html>
