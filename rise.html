@@ -16,7 +16,10 @@ shadow, so nothing is ever cut; the page widens the frame by as much, so the pic
 See-through, as lift.html: "light dark" makes the frame take the setting of the page it sits in, so a browser never
 paints it white.
 -->
-<meta name="color-scheme" content="light dark">
+<!-- 11 November 2026: "light dark" was wrong on Superhive: it follows the computer's own setting, not the
+page's, so with Windows in dark mode the frame differed from Superhive's light page and the browser painted
+it black. "normal" is what Superhive's page has, so the two always match and the frame stays see-through. -->
+<meta name="color-scheme" content="normal">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: transparent; }
   .box { position: absolute; left: 8px; right: 8px; bottom: 18px; top: 22px; outline: none; }
