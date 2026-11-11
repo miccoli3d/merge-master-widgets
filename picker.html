@@ -39,6 +39,8 @@ Superhive keeps allowfullscreen on an iframe; where full screen is not allowed, 
   .view.zoom { cursor: zoom-in; }  .full .view.zoom { cursor: zoom-out; }
   .view img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity .25s; }
   @media (prefers-reduced-motion: reduce) { .view img, button { transition: none; } }
+  /* a phone: more than four options go on two rows, so none is cut (Mattia, 10 November 2026, iPhone) */
+  @media (max-width: 360px) { .bar.many { flex-wrap: wrap; } .bar.many button { flex: 1 0 33.3%; padding: 9px 4px; } }
   .cap { margin: 0; padding: 11px 16px; font-size: 14px; line-height: 1.45; color: #A3A6B5;
          border-top: 1px solid rgba(255, 255, 255, .08); }
   .cap b { color: #F2F2F5; font-weight: 600; }
@@ -80,6 +82,7 @@ Superhive keeps allowfullscreen on an iframe; where full screen is not allowed, 
     if (caps[i]) { const b = document.createElement("b"); b.textContent = names[i] + ". "; cap.append(b, caps[i]) }
     buttons.forEach((b, j) => b.setAttribute("aria-pressed", i === j));
   }
+  if (buttons.length > 4) bar.classList.add("many");
   if (buttons.length) pick(Math.min(+(q.get("i") || 0), buttons.length - 1));
   // Whole screen from a click on the picture or the button, and back the same way or with Esc.
   const root = document.documentElement, big = document.getElementById("big");
